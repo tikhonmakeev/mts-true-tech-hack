@@ -1,0 +1,53 @@
+backend/user_files
+backend/faiss_indices
+
+# Python bytecode и кэш
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Виртуальное окружение
+env/
+ENV/
+venv/
+.venv/
+
+# Файлы настроек IDE
+.vscode/
+.idea/
+
+# Файлы окружения с секретами
+.env
+.env.*
+
+# Логи и временные файлы
+*.log
+*.tmp
+*.temp
+
+# Файлы тестов и покрытия
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Файлы сборки и дистрибутивы
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Файлы документации сборки
+docs/_build/
+
+# MacOS системные файлы
+.DS_Store
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Другие временные файлы
+*.swp
+*~
+
+# Файлы, связанные с Alembic (если используете миграции)
+alembic/versions/*.pyc
