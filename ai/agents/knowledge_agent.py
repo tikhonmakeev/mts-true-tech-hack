@@ -4,7 +4,7 @@ import numpy as np
 import requests
 import logging
 from langchain.agents import Tool
-from typing import List
+from typing import List, Any, Optional, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -12,16 +12,16 @@ class KnowledgeAgentTool(Tool):
     name = "knowledge_agent_tool"
     description = "A tool for searching relevant chunks from the knowledge base"
 
-    def __init__(self, faiss_index_path: str, chunk_file_path: str, embedding_api_url: str, api_key: str, embedding_model: str):
+    def __init__(self, faiss_index_path: str, chunk_file_path: str, embedding_api_url: str, api_key: str,
+                 embedding_model: str, name: str, func: Optional[Callable], description: str, **kwargs: Any):
+        super().__init__(name, func, description, **kwargs)
         self.knowledge_agent = KnowledgeAgent(faiss_index_path, chunk_file_path, embedding_api_url, api_key, embedding_model)
 
-    def _run(self, query: str) -> str:
-        """Реализация метода поиска и генерации ответа для LangChain."""
+    def _run(self, query: str, *args: Any, **kwargs: Any) -> str:
         relevant_chunks = self.knowledge_agent.search_chunks(query, top_k=3)
         return "\n".join(relevant_chunks)
 
-    async def _arun(self, query: str) -> str:
-        """Асинхронная версия метода для LangChain."""
+    async def _arun(self, query: str, *args: Any, **kwargs: Any) -> str:
         return self._run(query)
 
 
