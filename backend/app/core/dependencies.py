@@ -1,7 +1,14 @@
-from app.routers.websockets.connectionManager import ConnectionManager
+from typing import Annotated
 
-# Синглтон
-_connection_manager = ConnectionManager()
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBasicCredentials, HTTPBasic
 
-def get_connection_manager_singleton() -> ConnectionManager:
-    return _connection_manager
+from app.repositories.file_repository import FileRepository
+from app.services.file_service import FileService
+from app.services.exc import AuthException
+
+from app.core.database import SessionLocal
+
+
+def get_file_service() -> FileService:
+    return FileService(FileRepository(SessionLocal))
