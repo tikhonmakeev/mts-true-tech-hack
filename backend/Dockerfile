@@ -1,17 +1,20 @@
-# Используем официальный образ Python
 FROM python:3.11-slim
 
-# Рабочая директория
 WORKDIR /app
 
-# Копируем зависимости
+# Установка зависимостей
 COPY requirements.txt .
-
-# Устанавливаем зависимости
+RUN pip cache purge
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем остальные файлы
+# Копирование всех файлов
 COPY . .
 
-# Запуск сервера
-CMD ["uvicorn", "main", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+# Права на исполнение entrypoint
+RUN chmod +x entrypoint.sh
+
+# Переменные окружения
+ENV DB_URL=postgresql+asyncpg://postgres:postgres@db:5432/postgres
+
+# Запуск через entrypoint
+ENTRYPOINT ["./entrypoint.sh"]
