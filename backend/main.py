@@ -6,7 +6,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import uvicorn
 
-from app.routers.rest.message_handler import router as message_router
 from app.routers.rest.file_handler import router as file_router
 
 setup_logging()
@@ -16,7 +15,6 @@ logger.info("Starting application...")
 app = FastAPI()
 
 routers = [
-    message_router,
     file_router,
 ]
 
