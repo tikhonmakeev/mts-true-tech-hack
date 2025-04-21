@@ -1,23 +1,29 @@
-from langchain.llms import BaseLLM
+from langchain.llms.base import LLM
+from typing import Any, List, Optional
+from langchain.callbacks.manager import CallbackManagerForLLMRun
 import requests
 import logging
 
+from pydantic import Field
+
 logger = logging.getLogger(__name__)
 
-class LLMModel(BaseLLM):
-    def __init__(self, api_url: str, api_key: str, model: str):
-        self.api_url = api_url
-        self.api_key = api_key
-        self.model = model
+class LLMModel(LLM):
+    api_url: str = Field(...)
+    api_key: str = Field(...)
+    model: str = Field(...)
 
-    def _call(self, prompt: str) -> str:
-        logger.info(f"Generating LLM response for prompt: {prompt[:50]}...")  # first 50 chars for logging
 
+    @property
+    def _llm_type(self) -> str:
+        return "custom_llm"
+
+    def _call(self, prompt: str, stop: Optional[List[str]] = None, run_manager: Optional[CallbackManagerForLLMRun] = None, **kwargs) -> str:
+        logger.info(f"Generating LLM response for prompt: {prompt[:50]}...")
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-
         payload = {
             "model": self.model,
             "messages": [
@@ -29,8 +35,13 @@ class LLMModel(BaseLLM):
         response = requests.post(self.api_url, headers=headers, json=payload)
         if response.status_code != 200:
             raise RuntimeError(f"LLM API error: {response.status_code} {response.text}")
-        result = response.json()
-        return result['choices'][0]['message']['content'].strip()
+        content = response.json()['choices'][0]['message']['content'].strip()
+
+        if stop:
+            for stop_word in stop:
+                if stop_word in content:
+                    content = content.split(stop_word)[0]
+        return content
 
     def generate_response(self, query: str, context: str) -> str:
         prompt = f"Контекст: {context}\nВопрос: {query}\nОтвет:"

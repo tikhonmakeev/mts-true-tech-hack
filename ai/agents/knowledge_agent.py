@@ -4,7 +4,7 @@ import numpy as np
 import requests
 import logging
 from langchain.agents import Tool
-from typing import Any, List
+from typing import List
 
 logger = logging.getLogger(__name__)
 
