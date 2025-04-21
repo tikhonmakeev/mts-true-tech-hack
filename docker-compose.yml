@@ -18,7 +18,7 @@ services:
       - faiss_indices:/faiss_indices
 
   frontend:
-    build: ./frontend/idea-code-release-frontend  # Путь к фронтенду (нужно создать Dockerfile для фронта)
+    build: ./frontend/idea-code-release-frontend
     ports:
       - "80:80"
     depends_on:
@@ -44,6 +44,21 @@ services:
     networks:
       - app-network
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: adminpassword
+    ports:
+      - "5050:80"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network  # Добавлено подключение к сети
+
   rag-service:
     build: ./ai
     ports:
@@ -53,7 +68,8 @@ services:
       - OLLAMA_API=http://ollama:11434
     volumes:
       - faiss_indices:/faiss_indices
-
+    networks:
+      - app-network
 
 volumes:
   postgres_data:
