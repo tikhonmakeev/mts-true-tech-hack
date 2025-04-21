@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from app.routers.rest.file_handler import router as file_router
+from app.routers.rest.support_handler import router as support_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ app = FastAPI()
 
 routers = [
     file_router,
+    support_router
 ]
 
 for router in routers:
