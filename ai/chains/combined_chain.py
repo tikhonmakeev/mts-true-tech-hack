@@ -1,54 +1,74 @@
-from langchain.chains import SequentialChain
-from langchain.agents import initialize_agent, AgentType
-from langchain.memory import ConversationBufferMemory
-
-from agents.emotion_agent import EmotionAgentTool
-from agents.intent_agent import IntentAgent, IntentAgentTool
+from langchain_core.runnables import RunnableLambda, RunnableParallel, RunnablePassthrough
+from agents.intent_agent import IntentAgentTool
 from agents.knowledge_agent import KnowledgeAgentTool
-from agents.action_suggestion_agent import ActionSuggestionAgent, ActionSuggestionAgentTool
-from agents.summary_agent import SummaryAgent
-from agents.quality_assurance_agent import QualityAssuranceAgent
-from models.llm_model import LLMModel
-
-from config.settings import Settings
+from agents.emotion_agent import EmotionAgentTool
+from agents.action_suggestion_agent import action_suggestion_tool  # <-- без скобок
+from agents.summary_agent import SummaryAgentTool
+from agents.quality_assurance_agent import QualityAssuranceAgentTool
+from config.settings import settings
 
 
 class LangChainAgent:
-    def __init__(self, intent_model_dir: str, faiss_index_path: str, chunk_file_path: str, embedding_api_url: str, api_key: str, embedding_model: str):
-        self.intent_agent = IntentAgent(intent_model_dir)
-        self.knowledge_agent_tool = KnowledgeAgentTool(faiss_index_path, chunk_file_path, embedding_api_url, api_key, embedding_model)
-        self.action_suggestion_agent = ActionSuggestionAgent()
-        self.summary_agent = SummaryAgent()
-        self.quality_assurance_agent = QualityAssuranceAgent()
-
-        self.memory = ConversationBufferMemory()
-
-    @staticmethod
-    def create_agent_chain():
-        tools = [
-            IntentAgentTool(model_path=Settings.INTENT_MODEL_PATH),
-            KnowledgeAgentTool(faiss_index_path=Settings.FAISS_INDEX_PATH, chunk_file_path=Settings.CHUNKS_FILE_PATH,
-                               embedding_api_url=Settings.EMBEDDING_API_URL, api_key=Settings.MWS_API_KEY,
-                               embedding_model=Settings.EMBEDDING_MODEL),
-            EmotionAgentTool(),
-            ActionSuggestionAgentTool()
-
-            # Тут остальные: Summary и Quality Assurance
-        ]
-
-        llm = LLMModel(Settings.MWS_CHAT_API_URL, Settings.MWS_API_KEY, Settings.LLM_MODEL)  # или другой LLM по вашему выбору
-
-        # Инициализация агента с использованием инструментов и LLM
-        agent = initialize_agent(
-            tools,
-            llm,
-            agent_type=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=True
+    def __init__(self):
+        self.intent_tool = IntentAgentTool(model_path=settings.INTENT_MODEL_PATH)
+        self.knowledge_tool = KnowledgeAgentTool(
+            faiss_index_path=settings.FAISS_INDEX_PATH,
+            chunk_file_path=settings.CHUNKS_FILE_PATH,
+            embedding_api_url=settings.EMBEDDING_API_URL,
+            api_key=settings.MWS_API_KEY,
+            embedding_model=settings.EMBEDDING_MODEL
         )
-
-        return agent
+        self.emotion_tool = EmotionAgentTool()
+        self.action_suggestion_tool = action_suggestion_tool  # <-- уже созданный tool
+        self.summary_tool = SummaryAgentTool()
+        self.quality_tool = QualityAssuranceAgentTool()
 
     def run(self, input_text: str):
-        chain = self.create_agent_chain()
-        result = chain.run(input_text)
+        passthrough = RunnablePassthrough()
+
+        # Параллельный блок — намерение, эмоция, RAG
+        parallel_block = RunnableParallel(
+            intent=self.intent_tool,
+            emotion=self.emotion_tool,
+            rag_context=self.knowledge_tool
+        )
+
+        with_context = passthrough | RunnableLambda(
+            lambda x: {
+                **x,
+                **parallel_block.invoke(x)
+            }
+        )
+
+        # Подключаем action suggestion
+        action_suggestion = with_context | RunnableLambda(
+            lambda x: {
+                **x,
+                "advice": self.action_suggestion_tool.invoke({
+                    "intent": x["intent"],
+                    "emotion": x["emotion"],
+                    "rag_context": x["rag_context"]
+                })
+            }
+        )
+
+        # Саммари
+        summary = action_suggestion | RunnableLambda(
+            lambda x: {
+                **x,
+                "summary": self.summary_tool.invoke(x)
+            }
+        )
+
+        # Оценка качества
+        quality = summary | RunnableLambda(
+            lambda x: {
+                **x,
+                "quality": self.quality_tool.invoke(x)
+            }
+        )
+
+        final_chain = quality
+
+        result = final_chain.invoke({"input": input_text})
         return result

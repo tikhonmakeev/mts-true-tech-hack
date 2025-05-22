@@ -1,20 +1,25 @@
 from typing import Optional, Callable, Any
 
 from langchain.agents import Tool
+from pydantic import PrivateAttr
+
 from models.intent_classifier import IntentClassifier
 import logging
 
 
 class IntentAgentTool(Tool):
-    name = "intent_agent_tool"
-    description = "A tool for classifying user intent"
+    name: str = "intent_agent_tool"
+    description: str = "A tool for classifying user intent"
+    _intent_agent: Any = PrivateAttr()
 
-    def __init__(self, model_path: str, name: str, func: Optional[Callable], description: str, **kwargs: Any):
-        super().__init__(name, func, description, **kwargs)
-        self.intent_agent = IntentAgent(model_path)
+    def __init__(self, model_path: str, name: str = "intent_agent_tool",
+                 description: str = "A tool for classifying user intent",
+                 func: Optional[Callable] = None, **kwargs: Any):
+        super().__init__(name=name, func=lambda x: x, description=description, **kwargs)
+        self._intent_agent = IntentAgent(model_path)
 
     def _run(self, query: str, *args: Any, **kwargs: Any) -> str:
-        return self.intent_agent.classify_intent(query)
+        return self._intent_agent.classify_intent(query)
 
     async def _arun(self, query: str, *args: Any, **kwargs: Any) -> str:
         return self._run(query)

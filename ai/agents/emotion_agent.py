@@ -1,19 +1,24 @@
 from typing import Optional, Callable, Any
+from pydantic import PrivateAttr
 
 from langchain.agents import Tool
 from models.emotion_model import EmotionModel
 import logging
 
 class EmotionAgentTool(Tool):
-    name = "emotion_agent_tool"
-    description = "A tool for detecting emotions in Russian text"
+    name: str = "emotion_agent_tool"
+    description: str = "A tool for detecting emotions in Russian text"
+    _emotion_agent: Any = PrivateAttr()
 
-    def __init__(self, name: str, func: Optional[Callable], description: str, **kwargs: Any):
-        super().__init__(name, func, description, **kwargs)
-        self.emotion_agent = EmotionAgent()
+    def __init__(self, name: str = "emotion_agent_tool",
+                 func: Optional[Callable] = None,
+                 description: str = "A tool for detecting emotions in Russian text",
+                 **kwargs: Any):
+        super().__init__(name=name, func=lambda x: x, description=description, **kwargs)
+        self._emotion_agent = EmotionAgent()
 
     def _run(self, query: str, *args: Any, **kwargs: Any) -> str:
-        return self.emotion_agent.classify_emotion(query)
+        return self._emotion_agent.classify_emotion(query)
 
     async def _arun(self, query: str, *args: Any, **kwargs: Any) -> str:
         return self._run(query)

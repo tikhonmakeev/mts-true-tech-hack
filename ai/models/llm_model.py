@@ -8,20 +8,16 @@ import os
 
 from pydantic import Field
 
-from config.settings import Settings
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
+MAX_TOKENS=120
+
 
 class LLMModel(LLM):
     api_url: str = Field(...)
     api_key: str = Field(...)
     model: str = Field(...)
-    
-    def __init__(self, api_url: str, api_key: str, model: str, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self.api_url = api_url
-        self.api_key = api_key
-        self.model = model
 
     @property
     def _llm_type(self) -> str:
@@ -34,6 +30,7 @@ class LLMModel(LLM):
             "Content-Type": "application/json"
         }
         payload = {
+            "max_tokens": MAX_TOKENS,
             "model": self.model,
             "messages": [
                 {"role": "system", "content": "Ты помощник, который отвечает на вопросы по заданному контексту."},
@@ -57,8 +54,8 @@ class LLMModel(LLM):
         return self._call(prompt)
 
 def get_llm() -> LLMModel:
-    api_url = Settings.MWS_CHAT_API_URL
-    api_key = Settings.MWS_API_KEY
-    model = Settings.LLM_MODEL
+    api_url = settings.MWS_CHAT_API_URL
+    api_key = settings.MWS_API_KEY
+    model = settings.LLM_MODEL
 
     return LLMModel(api_url=api_url, api_key=api_key, model=model)

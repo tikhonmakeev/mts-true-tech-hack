@@ -1,11 +1,16 @@
-import os
+from pydantic_settings import BaseSettings
 
-class Settings:
-    FAISS_INDEX_PATH = os.getenv("FAISS_INDEX_PATH", "./faiss_indices")
-    CHUNKS_FILE_PATH = os.getenv("CHUNKS_FILE_PATH", "./faiss_indices/chunks.json")
-    EMBEDDING_API_URL = os.getenv("EMBEDDING_API_URL", "https://api.gpt.mws.ru/v1/embeddings")
-    MWS_API_KEY = os.getenv("MWS_API_KEY")
-    MWS_CHAT_API_URL = os.getenv("MWS_CHAT_API_URL", "https://api.gpt.mws.ru/v1/chat/completions")
-    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "bge-m3")
-    LLM_MODEL = os.getenv("LLM_MODEL", "llama-3.1-8b-instruct")
-    INTENT_MODEL_PATH = os.getenv("INTENT_MODEL_PATH", "./intent_local_model")
+class Settings(BaseSettings):
+    FAISS_INDEX_PATH: str = "faiss_indices/index.faiss"
+    CHUNKS_FILE_PATH: str = "faiss_indices/chunks.json"
+    EMBEDDING_API_URL: str = "https://api.gpt.mws.ru/v1/embeddings"
+    MWS_API_KEY: str
+    MWS_CHAT_API_URL: str = "https://api.gpt.mws.ru/v1/chat/completions"
+    EMBEDDING_MODEL: str = "bge-m3"
+    LLM_MODEL: str = "llama-3.1-8b-instruct"
+    INTENT_MODEL_PATH: str = "intent_local_model"
+
+    class Config:
+        env_file = "../.env"
+
+settings = Settings()

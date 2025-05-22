@@ -5,20 +5,24 @@ import requests
 import logging
 from langchain.agents import Tool
 from typing import List, Any, Optional, Callable
+from pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
 class KnowledgeAgentTool(Tool):
-    name = "knowledge_agent_tool"
-    description = "A tool for searching relevant chunks from the knowledge base"
+    name: str = "knowledge_agent_tool"
+    description: str = "A tool for searching relevant chunks from the knowledge base"
+    _knowledge_agent: Any = PrivateAttr()
 
     def __init__(self, faiss_index_path: str, chunk_file_path: str, embedding_api_url: str, api_key: str,
-                 embedding_model: str, name: str, func: Optional[Callable], description: str, **kwargs: Any):
-        super().__init__(name, func, description, **kwargs)
-        self.knowledge_agent = KnowledgeAgent(faiss_index_path, chunk_file_path, embedding_api_url, api_key, embedding_model)
+                 embedding_model: str, name: str = "knowledge_agent_tool",
+                 description: str="A tool for searching relevant chunks from the knowledge base",
+                 func: Optional[Callable] = None, **kwargs: Any):
+        super().__init__(name=name, func=lambda x: x, description=description, **kwargs)
+        self._knowledge_agent = KnowledgeAgent(faiss_index_path, chunk_file_path, embedding_api_url, api_key, embedding_model)
 
     def _run(self, query: str, *args: Any, **kwargs: Any) -> str:
-        relevant_chunks = self.knowledge_agent.search_chunks(query, top_k=3)
+        relevant_chunks = self._knowledge_agent.search_chunks(query, top_k=3)
         return "\n".join(relevant_chunks)
 
     async def _arun(self, query: str, *args: Any, **kwargs: Any) -> str:

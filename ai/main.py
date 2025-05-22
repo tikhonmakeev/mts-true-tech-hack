@@ -1,8 +1,18 @@
-from models.llm_model import LLMModel
+import pprint
 
-model = LLMModel(api_url='https://api.gpt.mws.ru/v1/chat/completions', api_key='sk-KNo006G2a48UVE3IxFlQEQ', model='llama-3.1-8b-instruct')
-context = "Искусственный интеллект - это область информатики, которая занимается созданием систем, способных выполнять задачи, требующие человеческого интеллекта."
-query = "Что такое искусственный интеллект?"
+from chains.combined_chain import LangChainAgent
+from config.settings import settings
 
-response = model.generate_response(query, context)
-print(response)
+from dotenv import load_dotenv
+load_dotenv()
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,  # или DEBUG, если хочешь больше деталей
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+pprint.pprint(settings.__dict__)
+langchain_agent = LangChainAgent()
+pprint.pprint(langchain_agent.run("Мне совсем не нравятся цены на ваш новый тариф!"))
